@@ -135,7 +135,7 @@ export async function addPatientVitals(patientId: string, formData: FormData) {
                 bloodPressure,
                 pulse: parseInt(pulse),
                 temperature: parseFloat(temperature),
-                oxygenLevel: oxygenLevel ? parseFloat(oxygenLevel) : null,
+                oxygenLevel: oxygenLevel ? parseInt(oxygenLevel) : null,
             }
         });
 

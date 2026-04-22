@@ -78,13 +78,8 @@ export async function addInventoryItem(prevState: any, formData: FormData) {
 }
 
 export async function getLowStockItems() {
-    const items = await prisma.inventory.findMany({
-        where: {
-            quantity: {
-                lte: prisma.inventory.fields.reorderLevel
-            }
-        }
-    });
+    // Removed failing Prisma native comparison as it's not supported
+    // The manual filter below correctly handles this.
 
     // Manual filter since Prisma doesn't support field comparison in where clause
     const allItems = await prisma.inventory.findMany();
