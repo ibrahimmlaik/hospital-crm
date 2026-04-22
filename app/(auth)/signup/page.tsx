@@ -2,11 +2,13 @@
 
 import { useActionState, useState, useEffect } from "react";
 import { signup } from "@/actions/auth";
+import { checkSystemSetup } from "@/actions/setup";
 import { GlassCard } from "@/components/ui/glass-card";
-import { User, Mail, Lock, Activity, Shield, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, Activity, Shield, ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getAllDepartments } from "@/actions/departments";
+import { useRouter } from "next/navigation";
 
 const ROLES = [
     { value: "DOCTOR", label: "Doctor" },
@@ -20,10 +22,44 @@ export default function SignupPage() {
     const [state, formAction, isPending] = useActionState(signup, null);
     const [selectedRole, setSelectedRole] = useState("PATIENT");
     const [departments, setDepartments] = useState<any[]>([]);
+    const [checking, setChecking] = useState(true);
+    const router = useRouter();
+
+    // Check if system needs setup first (no users = redirect to /setup)
+    useEffect(() => {
+        let mounted = true;
+        const check = async () => {
+            try {
+                const result = await checkSystemSetup();
+                if (mounted) {
+                    if (result.needsSetup) {
+                        router.push("/setup");
+                    } else {
+                        setChecking(false);
+                    }
+                }
+            } catch {
+                if (mounted) setChecking(false);
+            }
+        };
+        const timeout = setTimeout(() => {
+            if (mounted && checking) setChecking(false);
+        }, 3000);
+        check();
+        return () => { mounted = false; clearTimeout(timeout); };
+    }, [router]);
 
     useEffect(() => {
         getAllDepartments().then(setDepartments);
     }, []);
+
+    if (checking) {
+        return (
+            <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+                <div className="text-white text-lg">Loading...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
@@ -74,17 +110,18 @@ export default function SignupPage() {
                     <div className="space-y-1">
                         <label className="text-xs font-bold text-indigo-300 uppercase ml-1">Select Role</label>
                         <div className="relative">
-                            <Shield className="absolute left-3 top-3 text-indigo-400 w-5 h-5" />
+                            <Shield className="absolute left-3 top-3 text-indigo-400 w-5 h-5 pointer-events-none z-10" />
                             <select
                                 name="role"
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="w-full bg-[#0f172a]/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-teal-500/50 appearance-none"
+                                className="w-full bg-[#0f172a]/50 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-white focus:outline-none focus:border-teal-500/50 appearance-none cursor-pointer"
                             >
                                 {ROLES.map(role => (
                                     <option key={role.value} value={role.value}>{role.label}</option>
                                 ))}
                             </select>
+                            <ChevronDown className="absolute right-3 top-3 text-indigo-400 w-5 h-5 pointer-events-none" />
                         </div>
                     </div>
 
@@ -99,17 +136,18 @@ export default function SignupPage() {
                         >
                             <label className="text-xs font-bold text-indigo-300 uppercase ml-1">Department / Specialization</label>
                             <div className="relative">
-                                <Activity className="absolute left-3 top-3 text-indigo-400 w-5 h-5" />
+                                <Activity className="absolute left-3 top-3 text-indigo-400 w-5 h-5 pointer-events-none z-10" />
                                 <select
                                     name="specialization"
                                     required
-                                    className="w-full bg-[#0f172a]/50 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-teal-500/50 appearance-none"
+                                    className="w-full bg-[#0f172a]/50 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-white focus:outline-none focus:border-teal-500/50 appearance-none cursor-pointer"
                                 >
                                     <option value="">Select Department</option>
-                                    {departments.map(dept => (
+                                    {departments.map((dept: any) => (
                                         <option key={dept.id} value={dept.name}>{dept.name}</option>
                                     ))}
                                 </select>
+                                <ChevronDown className="absolute right-3 top-3 text-indigo-400 w-5 h-5 pointer-events-none" />
                             </div>
                         </motion.div>
                     )}
