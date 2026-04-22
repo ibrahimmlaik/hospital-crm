@@ -1,0 +1,562 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          String    // ADMIN, DOCTOR, PATIENT, STAFF_NURSE, STAFF_RECEPTION
+  status        String    @default("PENDING") // PENDING, ACTIVE, INACTIVE, SUSPENDED
+  isApproved    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  twoFactorEnabled Boolean @default(false)
+  passwordExpiry   Boolean @default(false)
+
+  patientProfile Patient?
+  doctorProfile  Doctor?
+  
+  notifications     Notification[]
+  leaveRequests     LeaveRequest[]
+  attendanceRecords Attendance[]
+  salaryStructure   SalaryStructure?
+  payrollRecords    Payroll[]
+  auditLogs         AuditLog[]
+  staffDepartments  StaffDepartment[]
+  paymentRecords    PaymentRecord[]
+  
+  @@index([status])
+  @@index([isApproved])
+}
+
+model Patient {
+  id              String   @id @default(cuid())
+  displayId       String?  @unique
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+  name            String
+  phone           String
+  dob             DateTime
+  gender          String
+  address         String?
+  medicalHistory  String?  // JSON or text summary
+  
+  // Custom Doctor Family feature
+  relatedDoctorId String?  // ID of the Doctor if patient is doc or doc's family member
+  familyMemberName String? // E.g., "Mother", "Spouse" (optional, if it's the doc themselves leave blank)
+
+  appointments    Appointment[]
+  prescriptions   Prescription[]
+  bills           Bill[]
+  labTests        LabTest[]
+  vitals          Vital[]
+  bed             Bed?
+  invoices        Invoice[]
+  bedAssignments  BedAssignment[]
+  revenueRecords  RevenueRecord[]
+}
+
+model Doctor {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  licenseNumber   String?  @unique
+  yearsExperience Int?
+  qualification   String?
+  availability    String   @default("{}") // JSON: { "mon": "09:00-17:00", ... }
+  
+  appointments    Appointment[]
+  prescriptions   Prescription[] // RXs issued by this doctor
+  departments     DoctorDepartment[]
+}
+
+model Appointment {
+  id           String      @id @default(cuid())
+  displayId    String?     @unique
+  patientId    String
+  patient      Patient     @relation(fields: [patientId], references: [id])
+  doctorId     String
+  doctor       Doctor      @relation(fields: [doctorId], references: [id])
+  departmentId String
+  department   Department  @relation(fields: [departmentId], references: [id])
+  date         DateTime
+  status       String      // SCHEDULED, COMPLETED, CANCELLED
+  reason       String?
+  notes        String?     // Doctor's notes after visit
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  prescription Prescription?
+  
+  @@index([departmentId])
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([status])
+}
+
+model Prescription {
+  id            String      @id @default(cuid())
+  displayId     String?     @unique
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor      @relation(fields: [doctorId], references: [id])
+  medicines     String      // Stored as JSON string: [{name, dosage, freq, duration}]
+  notes         String?
+  status        String      @default("PENDING") // PENDING, DISPENSED
+  createdAt     DateTime    @default(now())
+}
+
+model Bill {
+  id          String   @id @default(cuid())
+  displayId   String?  @unique
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  amount      Float
+  status      String   // UNPAID, PAID, INSURANCE
+  items       String   // JSON string of bill items
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  invoice     Invoice?
+}
+
+model LabTest {
+  id          String   @id @default(cuid())
+  displayId   String?  @unique
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  testName    String
+  status      String   // PENDING, COMPLETED
+  resultUrl   String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  title           String
+  message         String
+  type            String   // INFO, WARNING, SUCCESS
+  relatedEntity   String?  // USER, PATIENT, PRESCRIPTION, LAB_TEST, BED_ASSIGNMENT, etc.
+  relatedEntityId String?  // ID of the related record
+  actionUrl       String?  // Deep link to relevant page
+  read            Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  
+  @@index([userId, read])
+  @@index([relatedEntity, relatedEntityId])
+}
+
+model SystemSettings {
+  id           String @id @default(cuid())
+  hospitalName String @default("Nexus Health CRM")
+}
+
+model Vital {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  recordedBy    String   // Staff user ID
+  bloodPressure String   // "120/80"
+  temperature   Float    // Celsius
+  pulse         Int      // BPM
+  oxygenLevel   Int?     // SpO2 percentage
+  notes         String?
+  recordedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Bed {
+  id               String         @id @default(cuid())
+  wardId           String
+  ward             Ward           @relation(fields: [wardId], references: [id])
+  bedNumber        String         // e.g., "101", "202"
+  bedCode          String         @unique // e.g., "ICU-101", "GEN-202"
+  status           String         // AVAILABLE, OCCUPIED, CLEANING, MAINTENANCE
+  currentPatientId String?        @unique
+  patient          Patient?       @relation(fields: [currentPatientId], references: [id])
+  lastAssignedAt   DateTime?
+  lastCleanedAt    DateTime?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  
+  assignments      BedAssignment[]
+  
+  @@index([wardId])
+  @@index([status])
+  @@index([isActive])
+}
+
+model Inventory {
+  id            String   @id @default(cuid())
+  itemName      String
+  category      String   // MEDICINE, EQUIPMENT, SUPPLIES
+  quantity      Int
+  unit          String   // tablets, ml, pieces
+  reorderLevel  Int      // Alert threshold
+  lastRestocked DateTime @default(now())
+}
+
+model SystemAlert {
+  id              String    @id @default(cuid())
+  alertType       String    // BED_CAPACITY, INVENTORY_LOW, LEAVE_REQUEST, UNAPPROVED_USERS, LAB_PENDING
+  title           String
+  message         String
+  severity        String    // INFO, WARNING, CRITICAL
+  isResolved      Boolean   @default(false)
+  relatedEntity   String?   // BED, INVENTORY, LEAVE_REQUEST, USER, LAB_TEST
+  relatedEntityId String?   // ID of the related record
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  
+  @@index([isResolved])
+  @@index([alertType])
+  @@index([severity])
+}
+
+model LeaveRequest {
+  id          String    @id @default(cuid())
+  displayId   String?   @unique
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  leaveType   String    // SICK, CASUAL, ANNUAL, EMERGENCY
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  appliedAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?   // Admin user ID who approved/rejected
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+}
+
+// ============================================
+// ID Counter for professional display IDs
+// ============================================
+
+model IdCounter {
+  id    String @id @default(cuid())
+  key   String @unique  // e.g. "INV_2026", "APT_2026"
+  value Int    @default(0)
+}
+
+// ============================================
+// ENTERPRISE ADMIN PANEL MODELS
+// ============================================
+
+model Attendance {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  date        DateTime  @default(now())
+  clockIn     DateTime
+  clockOut    DateTime?
+  totalHours  Float?
+  status      String    // PRESENT, LATE, EARLY_LEAVE, ABSENT
+  notes       String?   // Admin correction notes
+  correctedBy String?   // Admin user ID who made correction
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([userId, date])
+  @@index([date])
+  @@index([status])
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  headId      String?  // User ID of department head
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  doctors        DoctorDepartment[]
+  staff          StaffDepartment[]
+  appointments   Appointment[]
+  revenueRecords RevenueRecord[]
+  
+  @@index([isActive])
+}
+
+model DoctorDepartment {
+  id           String     @id @default(cuid())
+  doctorId     String
+  doctor       Doctor     @relation(fields: [doctorId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  
+  @@unique([doctorId, departmentId])
+  @@index([doctorId])
+  @@index([departmentId])
+}
+
+model StaffDepartment {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime   @default(now())
+  
+  @@unique([userId, departmentId])
+  @@index([userId])
+  @@index([departmentId])
+}
+
+model SalaryStructure {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  baseSalary        Float
+  paymentType       String   // FIXED, PER_APPOINTMENT, HOURLY
+  perAppointmentFee Float?
+  hourlyRate        Float?
+  overtimeRate      Float?
+  effectiveFrom     DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([paymentType])
+}
+
+model Payroll {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  month           Int      // 1-12
+  year            Int
+  baseSalary      Float
+  bonuses         Float    @default(0)
+  deductions      Float    @default(0)
+  totalSalary     Float
+  hoursWorked     Float
+  overtimeHours   Float    @default(0)
+  status          String   // PENDING, APPROVED, PAID
+  paidAt          DateTime?
+  generatedBy     String   // Admin user ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, month, year])
+  @@index([month, year])
+  @@index([status])
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  billId      String?  @unique
+  bill        Bill?    @relation(fields: [billId], references: [id])
+  invoiceNo   String   @unique
+  amount      Float
+  tax         Float    @default(0)
+  discount    Float    @default(0)
+  totalAmount Float
+  status      String   // UNPAID, PARTIALLY_PAID, PAID
+  pdfUrl      String?
+  issuedAt    DateTime @default(now())
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([invoiceNo])
+  @@index([status])
+  @@index([patientId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // CLOCK_IN, CLOCK_OUT, ATTENDANCE_EDIT, PAYROLL_GENERATE, etc.
+  entity      String   // ATTENDANCE, PAYROLL, USER, etc.
+  entityId    String?
+  oldValue    String?  // JSON
+  newValue    String?  // JSON
+  reason      String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+// ============================================
+// WARD MANAGEMENT MODELS
+// ============================================
+
+model Ward {
+  id          String   @id @default(cuid())
+  name        String   @unique // ICU, General, Private, Emergency
+  description String?
+  capacity    Int      // Maximum beds
+  isActive    Boolean  @default(true)
+  createdBy   String   // Admin user ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  beds        Bed[]
+  
+  @@index([isActive])
+}
+
+model BedAssignment {
+  id          String    @id @default(cuid())
+  bedId       String
+  bed         Bed       @relation(fields: [bedId], references: [id])
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id])
+  assignedBy  String    // User ID (receptionist/nurse)
+  assignedAt  DateTime  @default(now())
+  releasedAt  DateTime?
+  releasedBy  String?   // User ID
+  notes       String?
+  
+  @@index([bedId])
+  @@index([patientId])
+  @@index([assignedAt])
+}
+
+// ============================================
+// FINANCIAL TRACKING MODELS
+// ============================================
+
+model PaymentRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  paymentType String   // SALARY, OVERTIME, BONUS, DEDUCTION
+  month       Int      // 1-12
+  year        Int
+  description String?
+  paidBy      String   // Admin user ID
+  paidAt      DateTime @default(now())
+  
+  @@index([userId])
+  @@index([month, year])
+  @@unique([userId, month, year, paymentType])
+}
+
+model RevenueRecord {
+  id           String      @id @default(cuid())
+  source       String      // APPOINTMENT, BED, LAB, TREATMENT, OTHER, DOCTOR_PAYMENT
+  amount       Float
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  patientId    String?
+  patient      Patient?    @relation(fields: [patientId], references: [id])
+  doctorId     String?     // Doctor User ID (for receptionist-entered doctor payments)
+  description  String?
+  recordedAt   DateTime    @default(now())
+  recordedBy   String      // User ID
+  
+  @@index([source])
+  @@index([departmentId])
+  @@index([doctorId])
+  @@index([recordedAt])
+}
+
+// ============================================
+// LAB & PHARMACY MODULES
+// ============================================
+
+model Lab {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  location    String?
+  phone       String?
+  email       String?
+  isActive    Boolean      @default(true)
+  createdBy   String       // Admin user ID
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  products    LabProduct[]
+
+  @@index([isActive])
+}
+
+model LabProduct {
+  id             String   @id @default(cuid())
+  labId          String
+  lab            Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  category       String?  // BLOOD_TEST, URINE_TEST, IMAGING, BIOPSY, etc.
+  price          Float
+  turnaroundTime String?  // e.g. "24 hours", "3 days"
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([labId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model Pharmacy {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  location    String?
+  phone       String?
+  email       String?
+  isActive    Boolean           @default(true)
+  createdBy   String            // Admin user ID
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  products    PharmacyProduct[]
+
+  @@index([isActive])
+}
+
+model PharmacyProduct {
+  id           String   @id @default(cuid())
+  pharmacyId   String
+  pharmacy     Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  category     String?  // TABLET, CAPSULE, SYRUP, INJECTION, TOPICAL, EQUIPMENT, etc.
+  manufacturer String?
+  price        Float
+  stock        Int      @default(0)
+  unit         String?  // tablets, ml, pieces
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([pharmacyId])
+  @@index([category])
+  @@index([isActive])
+}
