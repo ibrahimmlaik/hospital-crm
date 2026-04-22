@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Public Paths
-    if (pathname === "/login" || pathname === "/signup" || pathname === "/") {
+    if (pathname === "/login" || pathname === "/signup" || pathname === "/setup" || pathname === "/") {
         if (token) {
             // If already logged in, redirect to role-specific dashboard
             try {
