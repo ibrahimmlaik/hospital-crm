@@ -5,6 +5,7 @@ import TopBar from "@/components/shared/TopBar";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { SidebarProvider } from "@/lib/sidebar-context";
 
 // Cache hospital name for 5 minutes — avoids a DB query on every page navigation
 const getCachedHospitalName = unstable_cache(
@@ -31,24 +32,30 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    // Use cached hospital name — avoids a DB hit on every sidebar navigation
     const hospitalName = await getCachedHospitalName();
 
     return (
-        <div className="flex min-h-screen bg-[#0f172a]">
-            <Sidebar currentUser={user} hospitalName={hospitalName} />
-            <main className="flex-1 ml-64 flex flex-col min-h-screen relative">
-                <TopBar />
-                <div className="flex-1 p-8 overflow-y-auto relative z-10">
-                    {children}
-                </div>
+        <SidebarProvider>
+            <div className="flex min-h-screen bg-[#0f172a]">
+                <Sidebar currentUser={user} hospitalName={hospitalName} />
 
-                {/* Background Gradients for Dashboard Area */}
-                <div className="fixed top-0 left-64 right-0 h-screen overflow-hidden pointer-events-none z-0">
-                    <div className="absolute top-[10%] right-[10%] w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[100px]" />
-                    <div className="absolute bottom-[10%] left-[20%] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
-                </div>
-            </main>
-        </div>
+                {/*
+                  Desktop: ml-64 to clear the fixed sidebar
+                  Mobile:  ml-0, full width — sidebar slides in as overlay
+                */}
+                <main className="flex-1 lg:ml-64 flex flex-col min-h-screen relative w-full min-w-0">
+                    <TopBar />
+                    <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto relative z-10">
+                        {children}
+                    </div>
+
+                    {/* Background Gradients */}
+                    <div className="fixed top-0 left-0 lg:left-64 right-0 h-screen overflow-hidden pointer-events-none z-0">
+                        <div className="absolute top-[10%] right-[10%] w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-teal-500/10 rounded-full blur-[100px]" />
+                        <div className="absolute bottom-[10%] left-[10%] lg:left-[20%] w-[200px] lg:w-[300px] h-[200px] lg:h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
+                    </div>
+                </main>
+            </div>
+        </SidebarProvider>
     );
 }

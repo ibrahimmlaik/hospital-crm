@@ -53,17 +53,15 @@ export default async function AdminPatientsPage() {
     }));
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-white">Registered Patients</h1>
-                    <p className="text-indigo-200">Complete list of all patients in the system</p>
-                </div>
+            <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Registered Patients</h1>
+                <p className="text-indigo-200 text-sm sm:text-base">Complete list of all patients in the system</p>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 <GlassCard className="!p-4 bg-teal-500/5 border-teal-500/20">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 rounded-lg bg-teal-500/20 text-teal-300">

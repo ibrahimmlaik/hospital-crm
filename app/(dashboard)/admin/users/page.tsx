@@ -17,13 +17,13 @@ export default async function UserManagement() {
     }));
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6 sm:space-y-8">
+            <div className="flex flex-wrap justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">User Management</h1>
-                    <p className="text-indigo-200">Manage doctors, staff, and access roles</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">User Management</h1>
+                    <p className="text-indigo-200 text-sm sm:text-base">Manage doctors, staff, and access roles</p>
                 </div>
-                <Link href="/admin/users/new" className="bg-teal-500 hover:bg-teal-400 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-colors">
+                <Link href="/admin/users/new" className="bg-teal-500 hover:bg-teal-400 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-colors text-sm whitespace-nowrap">
                     <Plus size={18} /> Add User
                 </Link>
             </div>
