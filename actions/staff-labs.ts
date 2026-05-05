@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { generateLabTestId } from "@/lib/id-generator";
 
@@ -22,7 +22,7 @@ export async function getPendingLabTests() {
 }
 
 export async function updateLabTestStatus(prevState: any, formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || !currentUser.role.startsWith("STAFF")) {
         return { success: false, error: "Unauthorized" };
     }
@@ -53,7 +53,7 @@ export async function updateLabTestStatus(prevState: any, formData: FormData) {
 }
 
 export async function createLabTest(prevState: any, formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || !currentUser.role.startsWith("STAFF")) {
         return { success: false, error: "Unauthorized" };
     }

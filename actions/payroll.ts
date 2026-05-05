@@ -1,14 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 /**
  * Create or Update Salary Structure for a user
  */
 export async function createSalaryStructure(prevState: any, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -81,7 +81,7 @@ export async function createSalaryStructure(prevState: any, formData: FormData) 
  * Generate Monthly Payroll for all employees or specific users
  */
 export async function generatePayroll(month: number, year: number, userIds?: string[]) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -216,7 +216,7 @@ export async function generatePayroll(month: number, year: number, userIds?: str
  * Approve Payroll Record
  */
 export async function approvePayroll(payrollId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -267,7 +267,7 @@ export async function approvePayroll(payrollId: string) {
  * Mark Payroll as Paid
  */
 export async function markPayrollPaid(payrollId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -321,7 +321,7 @@ export async function markPayrollPaid(payrollId: string) {
  * Get All Payroll Records (Admin)
  */
 export async function getAllPayroll(month?: number, year?: number) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -366,7 +366,7 @@ export async function getAllPayroll(month?: number, year?: number) {
  * Get Salary Structure for a user
  */
 export async function getSalaryStructure(userId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return null;
     }
@@ -395,7 +395,7 @@ export async function getSalaryStructure(userId: string) {
  * Get all users eligible for payroll (doctors and staff)
  */
 export async function getPayrollEligibleUsers() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }

@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 /**
  * Get Patients associated with a specific Doctor
  */
 export async function getDoctorPatients() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
 
     // Quick auth check to make sure they are a doctor
     if (!user || user.role !== "DOCTOR") {
@@ -86,7 +86,7 @@ export async function getDoctorPatients() {
 }
 
 export async function getPatientDetailsForDoctor(patientId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "DOCTOR") return null;
 
     try {
@@ -113,7 +113,7 @@ export async function getPatientDetailsForDoctor(patientId: string) {
 import { revalidatePath } from "next/cache";
 
 export async function addPatientVitals(patientId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "DOCTOR") {
         return { success: false, error: "Unauthorized" };
     }
@@ -135,7 +135,7 @@ export async function addPatientVitals(patientId: string, formData: FormData) {
                 bloodPressure,
                 pulse: parseInt(pulse),
                 temperature: parseFloat(temperature),
-                oxygenLevel: oxygenLevel ? parseInt(oxygenLevel) : null,
+                oxygenLevel: oxygenLevel ? parseFloat(oxygenLevel) : null,
             }
         });
 

@@ -1,11 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function recordVitals(prevState: any, formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || !currentUser.role.startsWith("STAFF")) {
         return { success: false, error: "Unauthorized" };
     }

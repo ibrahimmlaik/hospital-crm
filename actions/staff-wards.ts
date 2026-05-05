@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function getAllBeds() {
@@ -36,7 +36,7 @@ export async function getAllBeds() {
 }
 
 export async function assignBed(prevState: any, formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || !currentUser.role.startsWith("STAFF")) {
         return { success: false, error: "Unauthorized" };
     }
@@ -103,7 +103,7 @@ export async function assignBed(prevState: any, formData: FormData) {
 }
 
 export async function dischargeBed(bedId: string) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || !currentUser.role.startsWith("STAFF")) {
         return { success: false, error: "Unauthorized" };
     }
@@ -149,7 +149,7 @@ export async function getWardStats() {
  * Create Bed - Admin only
  */
 export async function createBed(formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -225,7 +225,7 @@ export async function createBed(formData: FormData) {
  * Delete Bed - Admin only
  */
 export async function deleteBed(bedId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 // ============================================
@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 // ============================================
 
 export async function createPharmacy(formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -60,7 +60,7 @@ export async function createPharmacy(formData: FormData) {
 }
 
 export async function updatePharmacy(pharmacyId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -115,7 +115,7 @@ export async function updatePharmacy(pharmacyId: string, formData: FormData) {
 }
 
 export async function deletePharmacy(pharmacyId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -150,7 +150,7 @@ export async function deletePharmacy(pharmacyId: string) {
 }
 
 export async function permanentlyDeletePharmacy(pharmacyId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -176,7 +176,7 @@ export async function permanentlyDeletePharmacy(pharmacyId: string) {
 }
 
 export async function getAllPharmacies(includeInactive = false) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) return [];
 
     try {
@@ -195,7 +195,7 @@ export async function getAllPharmacies(includeInactive = false) {
 }
 
 export async function getPharmacyById(pharmacyId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) return null;
 
     try {
@@ -219,7 +219,7 @@ export async function getPharmacyById(pharmacyId: string) {
 // ============================================
 
 export async function addPharmacyProduct(pharmacyId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -276,7 +276,7 @@ export async function addPharmacyProduct(pharmacyId: string, formData: FormData)
 }
 
 export async function updatePharmacyProduct(productId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -341,7 +341,7 @@ export async function updatePharmacyProduct(productId: string, formData: FormDat
 }
 
 export async function deletePharmacyProduct(productId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }

@@ -1,10 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 export async function globalSearch(query: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || !query || query.trim().length < 1) {
         return [];
     }

@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 /**
  * Get Doctor Dashboard Data - 100% Database Driven
  */
 export async function getDoctorDashboardData() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "DOCTOR") {
         return null;
     }

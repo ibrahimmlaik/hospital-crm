@@ -1,11 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function getAllEmployeesWithSalary() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }

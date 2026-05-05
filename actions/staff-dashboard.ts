@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 /**
  * Get Staff Dashboard Data - 100% Database Driven
  */
 export async function getStaffDashboardData() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || !user.role.startsWith("STAFF_")) {
         return null;
     }
@@ -40,8 +40,8 @@ export async function getStaffDashboardData() {
             beds = [];
         }
 
-        // Get appointment stats
-        const [todayAppointments, completedToday, pendingToday, totalPatients] = await Promise.all([
+        // Get appointment stats + user name in parallel
+        const [todayAppointments, completedToday, pendingToday, totalPatients, staffUser] = await Promise.all([
             prisma.appointment.count({
                 where: {
                     date: {
@@ -68,12 +68,13 @@ export async function getStaffDashboardData() {
                     status: { in: ['PENDING', 'CONFIRMED'] }
                 }
             }),
-            prisma.patient.count()
+            prisma.patient.count(),
+            prisma.user.findUnique({ where: { id: user.userId }, select: { name: true } })
         ]);
 
         return {
             user: {
-                name: user.name,
+                name: staffUser?.name ?? user.role,
                 role: user.role
             },
             beds,

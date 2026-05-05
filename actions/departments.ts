@@ -1,14 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 /**
  * Create Department
  */
 export async function createDepartment(formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -63,7 +63,7 @@ export async function createDepartment(formData: FormData) {
  * Update Department
  */
 export async function updateDepartment(departmentId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -120,7 +120,7 @@ export async function updateDepartment(departmentId: string, formData: FormData)
  * Delete Department
  */
 export async function deleteDepartment(departmentId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -163,7 +163,7 @@ export async function deleteDepartment(departmentId: string) {
  * Get All Departments
  */
 export async function getAllDepartments(includeInactive = false) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return [];
     }
@@ -193,7 +193,7 @@ export async function getAllDepartments(includeInactive = false) {
  * Get Department by ID with details
  */
 export async function getDepartmentById(departmentId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return null;
     }
@@ -245,7 +245,7 @@ export async function getDepartmentById(departmentId: string) {
  * Assign Doctor to Department
  */
 export async function assignDoctorToDepartment(departmentId: string, doctorId: string, isPrimary = false) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -296,7 +296,7 @@ export async function assignDoctorToDepartment(departmentId: string, doctorId: s
  * Remove Doctor from Department
  */
 export async function removeDoctorFromDepartment(departmentId: string, doctorId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -334,7 +334,7 @@ export async function removeDoctorFromDepartment(departmentId: string, doctorId:
  * Assign Staff to Department
  */
 export async function assignStaffToDepartment(departmentId: string, userId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -384,7 +384,7 @@ export async function assignStaffToDepartment(departmentId: string, userId: stri
  * Remove Staff from Department
  */
 export async function removeStaffFromDepartment(departmentId: string, userId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -422,7 +422,7 @@ export async function removeStaffFromDepartment(departmentId: string, userId: st
  * Get Department Statistics
  */
 export async function getDepartmentStats(departmentId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return null;
     }
@@ -477,7 +477,7 @@ export async function getDepartmentStats(departmentId: string) {
  * Get Available Doctors (not assigned to a specific department)
  */
 export async function getAvailableDoctors(departmentId?: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }
@@ -511,7 +511,7 @@ export async function getAvailableDoctors(departmentId?: string) {
  * Get Available Staff (not assigned to a specific department)
  */
 export async function getAvailableStaff(departmentId?: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }

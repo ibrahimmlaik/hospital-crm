@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { generatePatientId, generateAppointmentId } from "@/lib/id-generator";
 
@@ -53,7 +53,7 @@ export async function getDoctorsBySpecialization(departmentName: string) {
 }
 
 export async function bookAppointment(formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "PATIENT") {
         return { success: false, error: "Unauthorized" };
     }
@@ -100,12 +100,14 @@ export async function bookAppointment(formData: FormData) {
 
         // If patient profile doesn't exist, create it
         if (!patient) {
+            // Fetch user's name from DB (only needed once for profile creation)
+            const userRecord = await prisma.user.findUnique({ where: { id: user.userId }, select: { name: true } });
             const patId = await generatePatientId();
             patient = await prisma.patient.create({
                 data: {
                     displayId: patId,
                     userId: user.userId,
-                    name: user.name,
+                    name: userRecord?.name ?? "Patient",
                     phone: "",
                     dob: new Date(),
                     gender: "Other"
@@ -147,7 +149,7 @@ export async function bookAppointment(formData: FormData) {
             data: {
                 userId: appointment.doctor.userId,
                 title: "New Appointment Request",
-                message: `Patient ${user.name} has requested an appointment on ${dateStr} at ${timeSlot}.`,
+                message: `Patient ${appointment.patient.name} has requested an appointment on ${dateStr} at ${timeSlot}.`,
                 type: "INFO",
                 relatedEntity: "APPOINTMENT",
                 relatedEntityId: appointment.id,
@@ -156,13 +158,13 @@ export async function bookAppointment(formData: FormData) {
         });
 
         // Notify Admins
-        const admins = await prisma.user.findMany({ where: { role: "ADMIN" } });
+        const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
         if (admins.length > 0) {
             await prisma.notification.createMany({
                 data: admins.map(admin => ({
                     userId: admin.id,
                     title: "New Appointment",
-                    message: `${user.name} booked with Dr. ${appointment.doctor.user.name}`,
+                    message: `${appointment.patient.name} booked with Dr. ${appointment.doctor.user.name}`,
                     type: "INFO",
                     relatedEntity: "APPOINTMENT",
                     relatedEntityId: appointment.id,

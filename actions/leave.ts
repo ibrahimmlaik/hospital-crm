@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { generateLeaveRequestAlerts } from "@/services/alert-service";
 
@@ -9,7 +9,7 @@ import { generateLeaveRequestAlerts } from "@/services/alert-service";
  * Apply for leave (Doctors and Staff only)
  */
 export async function applyLeave(prevState: any, formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
 
     if (!currentUser) {
         return { success: false, error: "Unauthorized" };
@@ -42,15 +42,16 @@ export async function applyLeave(prevState: any, formData: FormData) {
         });
 
         // Notify all admins about new leave request
-        const admins = await prisma.user.findMany({
-            where: { role: "ADMIN", status: "ACTIVE" }
-        });
+        const [admins, applicant] = await Promise.all([
+            prisma.user.findMany({ where: { role: "ADMIN", status: "ACTIVE" }, select: { id: true } }),
+            prisma.user.findUnique({ where: { id: currentUser.userId }, select: { name: true } })
+        ]);
 
         await prisma.notification.createMany({
             data: admins.map(admin => ({
                 userId: admin.id,
                 title: "New Leave Request",
-                message: `${currentUser.name} (${currentUser.role}) has requested ${leaveType} leave from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}.`,
+                message: `${applicant?.name ?? 'Staff'} (${currentUser.role}) has requested ${leaveType} leave from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}.`,
                 type: "INFO",
                 relatedEntity: "LEAVE_REQUEST",
                 relatedEntityId: leaveRequest.id,
@@ -73,7 +74,7 @@ export async function applyLeave(prevState: any, formData: FormData) {
  * Approve leave request (Admin only)
  */
 export async function approveLeave(leaveRequestId: string) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
 
     if (!currentUser || currentUser.role !== "ADMIN") {
         return { success: false, error: "Unauthorized - Admin only" };
@@ -137,7 +138,7 @@ export async function approveLeave(leaveRequestId: string) {
  * Reject leave request (Admin only)
  */
 export async function rejectLeave(leaveRequestId: string, rejectionReason?: string) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
 
     if (!currentUser || currentUser.role !== "ADMIN") {
         return { success: false, error: "Unauthorized - Admin only" };
@@ -205,7 +206,7 @@ export async function rejectLeave(leaveRequestId: string, rejectionReason?: stri
  * Get leave requests for current user
  */
 export async function getMyLeaveRequests() {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
 
     if (!currentUser) {
         return [];
@@ -228,7 +229,7 @@ export async function getMyLeaveRequests() {
  * Get all leave requests (Admin only)
  */
 export async function getAllLeaveRequests() {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
 
     if (!currentUser || currentUser.role !== "ADMIN") {
         return [];

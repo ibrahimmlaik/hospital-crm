@@ -1,13 +1,13 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 /**
  * Get Admin Dashboard Stats - 100% Database Driven
  */
 export async function getAdminDashboardStats() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return null;
     }
@@ -119,7 +119,7 @@ export async function getAdminDashboardStats() {
  * Get Monthly Revenue Data for Chart - Real Data
  */
 export async function getMonthlyRevenueData(year?: number) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }
@@ -169,7 +169,7 @@ export async function getMonthlyRevenueData(year?: number) {
  * Get System Alerts - Real Database-Driven Alerts
  */
 export async function getSystemAlerts() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }
@@ -197,7 +197,7 @@ export async function getSystemAlerts() {
  * Get Recent Activity - Real User Actions
  */
 export async function getRecentActivity(limit = 10) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }

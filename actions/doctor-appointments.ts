@@ -1,11 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 export async function getDoctorAppointments() {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || currentUser.role !== "DOCTOR") {
         return [];
     }
@@ -33,7 +33,7 @@ export async function getDoctorAppointments() {
 }
 
 export async function updateAppointmentStatus(appointmentId: string, status: string) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || currentUser.role !== "DOCTOR") {
         return { success: false, error: "Unauthorized" };
     }
@@ -80,7 +80,7 @@ export async function updateAppointmentStatus(appointmentId: string, status: str
 }
 
 export async function addAppointmentNotes(formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || currentUser.role !== "DOCTOR") {
         return { success: false, error: "Unauthorized" };
     }
@@ -107,7 +107,7 @@ export async function addAppointmentNotes(formData: FormData) {
 }
 
 export async function createLabTestRequest(formData: FormData) {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || currentUser.role !== "DOCTOR") {
         return { success: false, error: "Unauthorized" };
     }

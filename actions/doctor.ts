@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { generateAppointmentId, generatePrescriptionId, generateLabTestId } from "@/lib/id-generator";
 
 export async function createPrescription(prevState: any, formData: FormData) {
@@ -23,7 +23,7 @@ export async function createPrescription(prevState: any, formData: FormData) {
         }
 
         // 2. Find current doctor
-        const user = await getCurrentUser();
+        const user = await getSessionUser();
         let doctor;
         if (user && user.role === "DOCTOR") {
             doctor = await prisma.doctor.findUnique({ where: { userId: user.userId } });
@@ -132,7 +132,7 @@ export async function getDoctorsList() {
  * Get the logged-in doctor's patients for prescription dropdown
  */
 export async function getMyPatients() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "DOCTOR") return [];
 
     try {

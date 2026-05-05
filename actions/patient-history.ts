@@ -1,10 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
 export async function getPatientHistory() {
-    const currentUser = await getCurrentUser();
+    const currentUser = await getSessionUser();
     if (!currentUser || currentUser.role !== "PATIENT") {
         throw new Error("Unauthorized");
     }

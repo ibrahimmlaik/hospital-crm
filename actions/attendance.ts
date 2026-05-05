@@ -1,14 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 /**
  * Clock In - Records start of work shift
  */
 export async function clockIn() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return { success: false, error: "Unauthorized" };
     }
@@ -65,13 +65,15 @@ export async function clockIn() {
         });
 
         // Notify admins
-        const admins = await prisma.user.findMany({ where: { role: "ADMIN" } });
+        const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true, name: true } });
+        // Fetch current user's name for the notification message
+        const currentUserRecord = await prisma.user.findUnique({ where: { id: user.userId }, select: { name: true } });
         if (admins.length > 0) {
             await prisma.notification.createMany({
                 data: admins.map(admin => ({
                     userId: admin.id,
                     title: "Clock In",
-                    message: `${user.name} (${user.role}) clocked in at ${clockInTime.toLocaleTimeString()}`,
+                    message: `${currentUserRecord?.name ?? 'Staff'} (${user.role}) clocked in at ${clockInTime.toLocaleTimeString()}`,
                     type: "INFO",
                     relatedEntity: "ATTENDANCE",
                     relatedEntityId: attendance.id,
@@ -92,7 +94,7 @@ export async function clockIn() {
  * Clock Out - Records end of work shift and calculates hours
  */
 export async function clockOut() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return { success: false, error: "Unauthorized" };
     }
@@ -170,7 +172,7 @@ export async function clockOut() {
  * Get My Attendance - User views their own attendance
  */
 export async function getMyAttendance(month?: number, year?: number) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return [];
     }
@@ -210,7 +212,7 @@ export async function getAllAttendance(filters?: {
     year?: number;
     status?: string;
 }) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -271,7 +273,7 @@ export async function correctAttendance(
     },
     reason: string
 ) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -345,7 +347,7 @@ export async function correctAttendance(
  * Get Attendance Stats - Analytics for user or admin
  */
 export async function getAttendanceStats(userId?: string, month?: number, year?: number) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) {
         return null;
     }

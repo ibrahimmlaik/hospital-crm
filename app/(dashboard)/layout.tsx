@@ -4,6 +4,21 @@ import Sidebar from "@/components/shared/Sidebar";
 import TopBar from "@/components/shared/TopBar";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
+
+// Cache hospital name for 5 minutes — avoids a DB query on every page navigation
+const getCachedHospitalName = unstable_cache(
+    async () => {
+        try {
+            const settings = await prisma.systemSettings.findFirst();
+            return settings?.hospitalName ?? "Nexus Health CRM";
+        } catch {
+            return "Nexus Health CRM";
+        }
+    },
+    ["hospital-name"],
+    { revalidate: 300, tags: ["hospital-settings"] }
+);
 
 export default async function DashboardLayout({
     children,
@@ -16,16 +31,8 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    // Fetch hospital name from settings
-    let hospitalName = "Nexus Health CRM";
-    try {
-        const settings = await prisma.systemSettings.findFirst();
-        if (settings?.hospitalName) {
-            hospitalName = settings.hospitalName;
-        }
-    } catch {
-        // Fallback to default
-    }
+    // Use cached hospital name — avoids a DB hit on every sidebar navigation
+    const hospitalName = await getCachedHospitalName();
 
     return (
         <div className="flex min-h-screen bg-[#0f172a]">

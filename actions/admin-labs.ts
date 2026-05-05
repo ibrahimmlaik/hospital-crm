@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 // ============================================
@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 // ============================================
 
 export async function createLab(formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -60,7 +60,7 @@ export async function createLab(formData: FormData) {
 }
 
 export async function updateLab(labId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -115,7 +115,7 @@ export async function updateLab(labId: string, formData: FormData) {
 }
 
 export async function deleteLab(labId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -150,7 +150,7 @@ export async function deleteLab(labId: string) {
 }
 
 export async function permanentlyDeleteLab(labId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -176,7 +176,7 @@ export async function permanentlyDeleteLab(labId: string) {
 }
 
 export async function getAllLabs(includeInactive = false) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) return [];
 
     try {
@@ -195,7 +195,7 @@ export async function getAllLabs(includeInactive = false) {
 }
 
 export async function getLabById(labId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user) return null;
 
     try {
@@ -219,7 +219,7 @@ export async function getLabById(labId: string) {
 // ============================================
 
 export async function addLabProduct(labId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -270,7 +270,7 @@ export async function addLabProduct(labId: string, formData: FormData) {
 }
 
 export async function updateLabProduct(productId: string, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -329,7 +329,7 @@ export async function updateLabProduct(productId: string, formData: FormData) {
 }
 
 export async function deleteLabProduct(productId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }

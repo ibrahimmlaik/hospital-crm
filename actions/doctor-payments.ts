@@ -1,14 +1,14 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 
 /**
  * Add a payment record for a doctor (called by ADMIN)
  */
 export async function addDoctorPayment(prevState: any, formData: FormData) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return { success: false, error: "Unauthorized" };
     }
@@ -63,7 +63,7 @@ export async function addDoctorPayment(prevState: any, formData: FormData) {
  * Get all doctors with their patient counts and total payments recorded
  */
 export async function getDoctorPaymentSummary() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }
@@ -138,7 +138,7 @@ export async function getDoctorPaymentSummary() {
  * Get all payment records for a specific doctor
  */
 export async function getDoctorPayments(doctorId: string) {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }
@@ -162,7 +162,7 @@ export async function getDoctorPayments(doctorId: string) {
  * Get list of all active doctors (for dropdown in receptionist form)
  */
 export async function getActiveDoctors() {
-    const user = await getCurrentUser();
+    const user = await getSessionUser();
     if (!user || user.role !== "ADMIN") {
         return [];
     }

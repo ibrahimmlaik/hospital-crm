@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function updateSystemSettings(data: { hospitalName: string }) {
     try {
@@ -18,10 +18,10 @@ export async function updateSystemSettings(data: { hospitalName: string }) {
             });
         }
 
-        // Revalidate all pages so the sidebar picks up the new name
+        // Bust the cached hospital name so the sidebar reflects the new name immediately
+        revalidateTag("hospital-settings", "layout");
         revalidatePath("/", "layout");
         revalidatePath("/admin/settings");
-        revalidatePath("/admin");
 
         return { success: true };
     } catch (error) {
