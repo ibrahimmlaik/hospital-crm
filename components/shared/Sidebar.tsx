@@ -115,11 +115,11 @@ export default function Sidebar({ currentUser, hospitalName = "Nexus Health CRM"
             {/* User Profile (compact, no sign out) */}
             <div className="p-3 border-t border-white/10 mx-3 mb-3">
                 <div className="flex items-center gap-3 px-1">
-                    <img
-                        src={`https://ui-avatars.com/api/?name=${currentUser.name}&background=0f766e&color=fff&size=36`}
-                        alt="User"
-                        className="w-8 h-8 rounded-full border border-teal-500/30"
-                    />
+                    <div className="w-8 h-8 rounded-full border border-teal-500/30 bg-gradient-to-br from-teal-600 to-blue-700 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">
+                            {currentUser.name?.charAt(0)?.toUpperCase() ?? "?"}
+                        </span>
+                    </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-white truncate">{currentUser.name}</p>
                         <p className="text-[10px] text-teal-400 font-medium truncate">{currentUser.role.replace('_', ' ')}</p>

@@ -2,7 +2,6 @@
 
 import { useActionState, useState, useEffect } from "react";
 import { login } from "@/actions/auth";
-import { checkSystemSetup } from "@/actions/setup";
 import { GlassCard } from "@/components/ui/glass-card";
 import { User, Lock, Activity, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -11,50 +10,8 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [state, formAction, isPending] = useActionState(login, null);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [checking, setChecking] = useState(true);
     const router = useRouter();
-
-    // Check if system needs setup
-    useEffect(() => {
-        let mounted = true;
-
-        const checkSetup = async () => {
-            try {
-                const result = await checkSystemSetup();
-                if (mounted) {
-                    if (result.needsSetup) {
-                        router.push("/setup");
-                    } else {
-                        setChecking(false);
-                    }
-                }
-            } catch (error) {
-                console.error("Setup check error:", error);
-                // On error, assume setup is needed
-                if (mounted) {
-                    setChecking(false);
-                }
-            }
-        };
-
-        // Add a timeout to prevent infinite loading
-        const timeout = setTimeout(() => {
-            if (mounted && checking) {
-                console.warn("Setup check timeout - proceeding to login");
-                setChecking(false);
-            }
-        }, 3000);
-
-        checkSetup();
-
-        return () => {
-            mounted = false;
-            clearTimeout(timeout);
-        };
-    }, [router]);
 
     // Handle redirect on successful login
     useEffect(() => {
@@ -62,14 +19,6 @@ export default function LoginPage() {
             router.push(state.redirectTo);
         }
     }, [state, router]);
-
-    if (checking) {
-        return (
-            <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-                <div className="text-white text-lg">Checking system status...</div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-[#0f172a] flex flex-col justify-center items-center p-4 relative overflow-hidden">
@@ -113,10 +62,9 @@ export default function LoginPage() {
                                     name="email"
                                     type="email"
                                     required
+                                    autoComplete="email"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-10 py-3 text-white placeholder-indigo-300/30 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent transition-all"
                                     placeholder="name@hospital.com"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -129,10 +77,9 @@ export default function LoginPage() {
                                     name="password"
                                     type={showPassword ? "text" : "password"}
                                     required
+                                    autoComplete="current-password"
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-10 py-3 text-white placeholder-indigo-300/30 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent transition-all"
                                     placeholder="••••••••"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
                                 />
                                 <button
                                     type="button"
@@ -155,8 +102,20 @@ export default function LoginPage() {
                             disabled={isPending}
                             className="w-full bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-teal-900/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
                         >
-                            {isPending ? "Authenticating..." : "Access System"}
-                            {!isPending && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                            {isPending ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Authenticating...
+                                </>
+                            ) : (
+                                <>
+                                    Access System
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
                         </button>
 
                         <p className="text-center text-indigo-300 text-sm">

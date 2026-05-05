@@ -1,35 +1,46 @@
 "use client";
 
-import { Bell, Settings, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { getNotifications, markAsRead } from "@/actions/notifications";
-import { getCurrentUser, logout } from "@/actions/auth";
+import { logout } from "@/actions/auth";
 
 export default function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [userId, setUserId] = useState<string | null>(null);
+    const [loadedOnce, setLoadedOnce] = useState(false);
 
-    const loadNotifications = useCallback(async () => {
+    const loadNotifications = useCallback(async (uid: string) => {
         try {
-            const user = await getCurrentUser();
-            if (user) {
-                setUserId(user.userId);
-                const notifs = await getNotifications(user.userId);
-                setNotifications(notifs);
-            }
-        } catch (err) {
+            const notifs = await getNotifications(uid);
+            setNotifications(notifs);
+        } catch {
             // Silently fail on polling errors
         }
     }, []);
 
+    // Get user ID once on mount — fetch /api/me (JWT-only, no DB query)
     useEffect(() => {
-        loadNotifications();
-        const interval = setInterval(loadNotifications, 15000);
-        return () => clearInterval(interval);
+        fetch("/api/me")
+            .then(r => r.ok ? r.json() : null)
+            .then((user) => {
+                if (user?.userId) {
+                    setUserId(user.userId);
+                    loadNotifications(user.userId);
+                    setLoadedOnce(true);
+                }
+            })
+            .catch(() => {});
     }, [loadNotifications]);
+
+    // Poll every 30 seconds (was 15s) — reduced polling to halve unnecessary server calls
+    useEffect(() => {
+        if (!userId) return;
+        const interval = setInterval(() => loadNotifications(userId), 30000);
+        return () => clearInterval(interval);
+    }, [userId, loadNotifications]);
 
     const handleNotificationClick = async (notifId: string) => {
         await markAsRead(notifId);
@@ -71,11 +82,6 @@ export default function TopBar() {
                         </span>
                     )}
                 </button>
-
-                {/* Settings */}
-                <Link href="/admin/settings" className="p-2 rounded-lg hover:bg-white/5 text-indigo-300 hover:text-white transition-colors">
-                    <Settings size={18} />
-                </Link>
 
                 {/* Divider */}
                 <div className="w-px h-6 bg-white/10 mx-1" />
